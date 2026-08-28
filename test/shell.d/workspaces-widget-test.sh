@@ -51,5 +51,10 @@ assert(/readonly property string wsName: root\.vertical \? "" : root\.nameFor\(m
 // entry it is actually configured on.
 assert(/"omarchy-hyprland-workspace-name " \+ args \+ " --widget " \+ Util\.shellQuote\(root\.moduleName\)/.test(source), 'the name command targets this widget\'s own entry')
 assert(/if \(button === Qt\.RightButton\) root\.runNameCommand\("--prompt " \+ modelData\)/.test(source), 'right-click prompts for a name')
-assert(/else if \(button === Qt\.MiddleButton\) root\.runNameCommand\("--clear " \+ modelData\)/.test(source), 'middle-click clears the name')
+assert(/"omarchy-hyprland-workspace-forget " \+ id \+ " --widget " \+ Util\.shellQuote\(root\.moduleName\)/.test(source), 'forgetting targets this widget\'s own entry')
+assert(/else if \(button === Qt\.MiddleButton\) root\.forgetWorkspace\(modelData\)/.test(source), 'middle-click forgets the workspace')
+
+// Replayed rules can create or drop several workspaces in one reload; the
+// list is re-read so a kept workspace never waits for a shell restart.
+assert(/String\(event\.name\) === "configreloaded"\) Hyprland\.refreshWorkspaces\(\)/.test(source), 'a config reload re-reads the workspace list')
 JS

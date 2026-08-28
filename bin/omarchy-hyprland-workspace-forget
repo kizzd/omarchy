@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# omarchy:summary=Clear a workspace's name and stop keeping it alive while empty
+# omarchy:args=<id> [--widget <widget-id>]
+
+# The reverse of naming or adding a workspace. Its windows are not touched: a
+# workspace that still holds any stays exactly as it is, just without a name.
+
+set -euo pipefail
+
+fail() {
+  echo "omarchy-hyprland-workspace-forget: $*" >&2
+  exit 1
+}
+
+id="${1:-}"
+[[ -n $id && $id != --* ]] || { echo "Usage: omarchy-hyprland-workspace-forget <id> [--widget <widget-id>]" >&2; exit 1; }
+[[ $id =~ ^[0-9]+$ ]] && (( id > 0 )) || fail "workspace id must be a positive number, got: $id"
+shift
+
+omarchy-hyprland-workspace-name --clear "$id" "$@"
+omarchy-hyprland-workspace-persist "$id" off

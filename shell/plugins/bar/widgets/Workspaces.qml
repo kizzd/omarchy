@@ -64,6 +64,24 @@ BarWidget {
     root.bar.run("omarchy-hyprland-workspace-name " + args + " --widget " + Util.shellQuote(root.moduleName))
   }
 
+  // Drops the name and lets the workspace disappear once empty. Windows on it
+  // stay where they are.
+  function forgetWorkspace(id) {
+    if (!root.bar) return
+    root.bar.run("omarchy-hyprland-workspace-forget " + id + " --widget " + Util.shellQuote(root.moduleName))
+  }
+
+  // A config reload replays the saved rules, which can create or drop several
+  // workspaces at once. Re-read the list rather than trust that every event
+  // of that burst arrived; a missed one leaves a kept workspace without a
+  // tile until the shell restarts.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (event && String(event.name) === "configreloaded") Hyprland.refreshWorkspaces()
+    }
+  }
+
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
 
   implicitWidth: grid.implicitWidth + trailingGap
@@ -110,7 +128,7 @@ BarWidget {
         fixedHeight: root.barSize
         onPressed: function(button) {
           if (button === Qt.RightButton) root.runNameCommand("--prompt " + modelData)
-          else if (button === Qt.MiddleButton) root.runNameCommand("--clear " + modelData)
+          else if (button === Qt.MiddleButton) root.forgetWorkspace(modelData)
           else root.focusWorkspace(modelData)
         }
       }

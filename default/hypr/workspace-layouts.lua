@@ -1,4 +1,6 @@
--- Restore workspace layouts saved by omarchy-hyprland-workspace-layout-toggle.
+-- Restore workspace rules saved per workspace: layouts from
+-- omarchy-hyprland-workspace-layout-toggle, and the persistent flag from
+-- omarchy-hyprland-workspace-persist.
 
 local paths = require("default.hypr.paths")
 local require_all = require("default.hypr.require_all")

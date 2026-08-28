@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# omarchy:summary=Keep a workspace alive while it is empty, or let it go again
+# omarchy:args=<id> [on|off] | --list
+# omarchy:examples=omarchy hyprland workspace persist 6 | omarchy hyprland workspace persist 6 off | omarchy hyprland workspace persist --list
+
+# Hyprland drops an empty workspace the moment it loses focus, so a workspace
+# set up ahead of its windows is gone before they arrive. A persistent rule
+# keeps it. The rule is applied live and saved next to the workspace layouts,
+# where default/hypr/workspace-layouts.lua replays it on the next start.
+#
+# A named workspace stays persistent: the tile in the bar promises a workspace
+# SUPER+TAB can reach. Take the name away first, or use
+# omarchy-hyprland-workspace-forget for both at once.
+
+set -euo pipefail
+
+# The same directory default/hypr/workspace-layouts.lua reads, XDG override and all.
+RULES_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
+
+fail() {
+  echo "omarchy-hyprland-workspace-persist: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<USAGE
+Usage:
+  omarchy-hyprland-workspace-persist <id>        Keep the workspace while it is empty
+  omarchy-hyprland-workspace-persist <id> off    Let an empty workspace disappear again
+  omarchy-hyprland-workspace-persist --list      Print the ids kept alive, one per line
+USAGE
+}
+
+valid_id() {
+  [[ $1 =~ ^[0-9]+$ ]] && (( $1 > 0 )) || fail "workspace id must be a positive number, got: $1"
+}
+
+rule_file() {
+  echo "$RULES_DIR/persistent-$1.lua"
+}
+
+rule_line() {
+  printf 'hl.workspace_rule({ workspace = "%s", persistent = %s })' "$1" "$2"
+}
+
+apply_rule() {
+  hyprctl eval "$(rule_line "$1" "$2")" >/dev/null 2>&1 ||
+    hyprctl keyword workspace "$1, persistent:$2" >/dev/null 2>&1 ||
+    fail "could not apply the workspace rule; is Hyprland running?"
+}
+
+is_named() {
+  omarchy-hyprland-workspace-name --list 2>/dev/null | jq -e --arg id "$1" 'has($id)' >/dev/null 2>&1
+}
+
+persist_on() {
+  local id="$1" file
+  file=$(rule_file "$id")
+  mkdir -p "$RULES_DIR"
+  printf '%s\n' "$(rule_line "$id" true)" >"$file.tmp"
+  mv "$file.tmp" "$file"
+  apply_rule "$id" true
+}
+
+persist_off() {
+  local id="$1"
+  if is_named "$id"; then
+    fail "workspace $id is named and stays; clear the name first, or run omarchy-hyprland-workspace-forget $id"
+  fi
+  rm -f "$(rule_file "$id")"
+  apply_rule "$id" false
+}
+
+list_persistent() {
+  local file
+  shopt -s nullglob
+  for file in "$RULES_DIR"/persistent-*.lua; do
+    file=${file##*/persistent-}
+    echo "${file%.lua}"
+  done | sort -n
+}
+
+case "${1:-}" in
+--list)
+  (( $# == 1 )) || fail "--list takes no arguments"
+  list_persistent
+  ;;
+"")
+  usage >&2
+  exit 1
+  ;;
+-h | --help)
+  usage
+  ;;
+*)
+  (( $# <= 2 )) || fail "too many arguments"
+  valid_id "$1"
+  case "${2:-on}" in
+  on) persist_on "$1" ;;
+  off) persist_off "$1" ;;
+  *) fail "expected on or off, got: $2" ;;
+  esac
+  ;;
+esac

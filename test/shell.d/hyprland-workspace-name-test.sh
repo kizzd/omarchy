@@ -44,6 +44,11 @@ cat >"$stub_dir/omarchy-notification-send" <<'STUB'
 printf '%s\n' "$*" >>"$NOTIFY_LOG"
 STUB
 
+cat >"$stub_dir/omarchy-hyprland-workspace-persist" <<'STUB'
+#!/bin/bash
+printf 'persist %s\n' "$*" >>"$BAR_LOG"
+STUB
+
 chmod +x "$stub_dir"/*
 
 run() {
@@ -60,33 +65,34 @@ write_config() {
   printf '%s\n' "$1" >"$config_file"
 }
 
-last_bar_call() {
-  tail -n 1 "$bar_log"
+# Naming also keeps the workspace, which lands in the log after the set.
+last_set_call() {
+  grep '^set ' "$bar_log" | tail -n 1
 }
 
 write_config '{"bar":{"layout":{"left":[{"id":"omarchy.menu"},{"id":"omarchy.workspaces","names":{"1":"term"}}],"center":[],"right":[]}}}'
 
 reset_logs
 run 2 web
-[[ $(last_bar_call) == 'set omarchy.workspaces names {"1":"term","2":"web"} --json' ]] ||
-  fail "naming a workspace merges into the existing names" "$(cat "$bar_log")"
-pass "naming a workspace merges into the existing names"
+[[ $(cat "$bar_log") == $'set omarchy.workspaces names {"1":"term","2":"web"} --json\npersist 2 on' ]] ||
+  fail "naming a workspace merges into the existing names and keeps the workspace" "$(cat "$bar_log")"
+pass "naming a workspace merges into the existing names and keeps the workspace"
 
 reset_logs
 run 1 "  two words  "
-[[ $(last_bar_call) == 'set omarchy.workspaces names {"1":"two words"} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {"1":"two words"} --json' ]] ||
   fail "a name is trimmed and may hold a space" "$(cat "$bar_log")"
 pass "a name is trimmed and may hold a space"
 
 reset_logs
 run --clear 1
-[[ $(last_bar_call) == 'set omarchy.workspaces names {} --json' ]] ||
-  fail "clearing removes the name" "$(cat "$bar_log")"
-pass "clearing removes the name"
+[[ $(cat "$bar_log") == 'set omarchy.workspaces names {} --json' ]] ||
+  fail "clearing removes the name and leaves persistence alone" "$(cat "$bar_log")"
+pass "clearing removes the name and leaves persistence alone"
 
 reset_logs
 run 1 ""
-[[ $(last_bar_call) == 'set omarchy.workspaces names {} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {} --json' ]] ||
   fail "an empty name clears like --clear" "$(cat "$bar_log")"
 pass "an empty name clears like --clear"
 
@@ -99,7 +105,7 @@ pass "a name over the limit is refused without writing"
 
 reset_logs
 run 3 "sixteen chars ok"
-[[ $(last_bar_call) == 'set omarchy.workspaces names {"1":"term","3":"sixteen chars ok"} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {"1":"term","3":"sixteen chars ok"} --json' ]] ||
   fail "a name at the limit is accepted" "$(cat "$bar_log")"
 pass "a name at the limit is accepted"
 
@@ -114,7 +120,7 @@ pass "only positive whole numbers are workspace ids"
 
 reset_logs
 MENU_ANSWER="  mail " run --prompt 4
-[[ $(last_bar_call) == 'set omarchy.workspaces names {"1":"term","4":"mail"} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {"1":"term","4":"mail"} --json' ]] ||
   fail "the prompt answer is saved trimmed" "$(cat "$bar_log")"
 pass "the prompt answer is saved trimmed"
 
@@ -125,7 +131,7 @@ pass "a dismissed prompt changes nothing"
 
 reset_logs
 MENU_ANSWER="" run --prompt 1
-[[ $(last_bar_call) == 'set omarchy.workspaces names {} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {} --json' ]] ||
   fail "an empty prompt answer clears the name" "$(cat "$bar_log")"
 pass "an empty prompt answer clears the name"
 
@@ -139,7 +145,7 @@ pass "an over-long prompt answer is refused with a notification"
 
 reset_logs
 run --widget local.workspaces 2 web
-[[ $(last_bar_call) == 'set local.workspaces names {"2":"web"} --json' ]] ||
+[[ $(last_set_call) == 'set local.workspaces names {"2":"web"} --json' ]] ||
   fail "--widget names the entry the bar asked for" "$(cat "$bar_log")"
 pass "--widget names the entry the bar asked for"
 
@@ -149,7 +155,7 @@ write_config '{"bar":{"layout":{"left":[{"id":"me.workspaces","names":{"5":"chat
 reset_logs
 PLUGIN_LIST='[{"id":"me.workspaces","enabled":true,"clonedFrom":"omarchy.workspaces"},{"id":"omarchy.workspaces","enabled":false,"clonedFrom":""}]' \
   run 2 web
-[[ $(last_bar_call) == 'set me.workspaces names {"5":"chat","2":"web"} --json' ]] ||
+[[ $(last_set_call) == 'set me.workspaces names {"5":"chat","2":"web"} --json' ]] ||
   fail "the built-in id resolves to the clone that replaced it" "$(cat "$bar_log")"
 pass "the built-in id resolves to the clone that replaced it"
 
@@ -165,7 +171,7 @@ pass "--list drops names that are not strings"
 write_config '{}'
 reset_logs
 run 2 web
-[[ $(last_bar_call) == 'set omarchy.workspaces names {"2":"web"} --json' ]] ||
+[[ $(last_set_call) == 'set omarchy.workspaces names {"2":"web"} --json' ]] ||
   fail "a user without shell.json still gets the built-in widget named" "$(cat "$bar_log")"
 pass "a user without shell.json still gets the built-in widget named"
 

@@ -13,6 +13,10 @@
 # The bar passes its own widget id in --widget, so a cloned widget names its
 # own entry. Without it the built-in id is used, falling back to whichever
 # clone has taken its place.
+#
+# A named workspace is kept alive while empty, so the tile in the bar is one
+# SUPER+TAB reaches. Clearing the name leaves that alone; use
+# omarchy-hyprland-workspace-forget to drop both.
 
 set -euo pipefail
 
@@ -37,6 +41,7 @@ Options:
   --widget <widget-id>   The bar widget holding the names (default: $DEFAULT_WIDGET)
 
 Names are at most $MAX_NAME_LENGTH characters. A workspace without a name shows its number.
+A named workspace is kept alive while empty; omarchy-hyprland-workspace-forget undoes both.
 USAGE
 }
 
@@ -99,6 +104,7 @@ set_name() {
     names=$(jq -c --arg id "$id" --arg name "$name" '.[$id] = $name' <<<"$names")
   fi
   write_names "$widget" "$names"
+  [[ -z $name ]] || omarchy-hyprland-workspace-persist "$id" on
 }
 
 prompt_name() {

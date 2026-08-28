@@ -66,6 +66,16 @@ Names are stored on the widget's own entry in `shell.json`, so they travel with 
 
 A name is at most 16 characters. Hovering a named tile shows the number it stands for, which is still the key that reaches it. A vertical bar is too narrow for words and keeps the numbers.
 
+A named workspace is kept alive while it is empty, so the tile you see is one `SUPER+TAB` reaches; Hyprland would otherwise drop an empty workspace the moment it loses focus. Any workspace can be kept that way, name or not:
+
+```bash
+omarchy hyprland workspace persist 6
+omarchy hyprland workspace persist 6 off
+omarchy hyprland workspace forget 6      # clears the name and lets it go
+```
+
+Middle-clicking a tile forgets it. Windows on a forgotten workspace stay where they are; only the name and the promise to keep it go. The rules live in `~/.local/state/omarchy/workspace-layouts/`, next to the per-workspace layouts, and are replayed on the next start.
+
 ## Module catalogue
 
 ### First-party interactive widgets
@@ -73,7 +83,7 @@ A name is at most 16 characters. Hovering a named tile shows the number it stand
 | Name | What it does | Interactions |
 |---|---|---|
 | `omarchy.menu` | Omarchy menu launcher | left = menu · right = terminal |
-| `omarchy.workspaces` | Hyprland workspace switcher, with optional names | left = focus workspace · right = name it · middle = clear the name |
+| `omarchy.workspaces` | Hyprland workspace switcher, with optional names | left = focus workspace · right = name it · middle = forget it |
 | `omarchy.clock` | Date/time label + popup with a month grid, ISO week numbers, and month stepping | left = popup · right = cycle label format · middle = timezone selector |
 | `omarchy.media` | MPRIS now-playing — scrolling track + artist, cover-art popup | left = play/pause · middle = next · scroll = prev/next · right = popup |
 | `omarchy.indicators` | Manual state indicators | left = indicator action |
