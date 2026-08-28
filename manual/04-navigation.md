@@ -54,6 +54,8 @@ A workspace can wear a name instead of its number in the bar. Right-click its ti
 
 A named workspace also sticks around while it's empty. Hyprland normally drops an empty workspace the moment you leave it, which would make `Super + Tab` skip a tile you can see in the bar. Middle-clicking a tile forgets it: the name goes and, once it's empty, so does the workspace — any windows on it stay put. To keep an unnamed workspace the same way, use `omarchy hyprland workspace persist 6`.
 
+Want to set up a few workspaces before moving windows into them? Turn on the `+` at the end of the row with `omarchy bar set omarchy.workspaces addButton true --json`. A left-click on it adds the next workspace and keeps it, without leaving the one you're on; a right-click adds it and asks for its name straight away.
+
 ### Grouping windows
 
 Windows can be grouped using `Super + G`. Once you're in a group, every window you start while that's active will belong to the group. You can move between these grouped windows using `Super + Ctrl + Arrow Left/Right` or `Super + Alt + 1/2/3/4` to go directly to grouped window in order.

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# omarchy:summary=Add the next workspace and keep it alive until its windows arrive
+# omarchy:args=[--name] [--widget <widget-id>]
+# omarchy:examples=omarchy hyprland workspace add | omarchy hyprland workspace add --name
+
+# Takes the first id past every workspace Hyprland or the persistent rules
+# know, and past the bar's fixed 1-5, then keeps it with
+# omarchy-hyprland-workspace-persist so that an empty workspace can be set up
+# before anything is moved onto it. The focus stays where it is, so several
+# can be lined up in a row. --name asks for a name straight away.
+#
+# Prints the id of the workspace it added.
+
+set -euo pipefail
+
+fail() {
+  echo "omarchy-hyprland-workspace-add: $*" >&2
+  exit 1
+}
+
+# The bar always draws 1-5, so the first added workspace is 6 at the lowest.
+BASE_IDS='[1, 2, 3, 4, 5]'
+
+name_it=0
+name_args=()
+while (( $# > 0 )); do
+  case "$1" in
+  --name)
+    name_it=1
+    ;;
+  --widget)
+    shift
+    (( $# > 0 )) || fail "--widget requires a widget id"
+    name_args+=(--widget "$1")
+    ;;
+  -h | --help)
+    echo "Usage: omarchy-hyprland-workspace-add [--name] [--widget <widget-id>]"
+    exit 0
+    ;;
+  *)
+    fail "unknown option: $1"
+    ;;
+  esac
+  shift
+done
+
+existing=$(hyprctl workspaces -j 2>/dev/null | jq -c '[.[].id | select(. > 0)]' 2>/dev/null) || existing=""
+[[ -n $existing ]] || fail "could not list workspaces; is Hyprland running?"
+kept=$(omarchy-hyprland-workspace-persist --list | jq -cRn '[inputs | select(. != "") | tonumber]')
+
+id=$(jq -n --argjson base "$BASE_IDS" --argjson existing "$existing" --argjson kept "$kept" \
+  '([$base, $existing, $kept] | add | max) + 1')
+
+omarchy-hyprland-workspace-persist "$id" on
+if (( name_it )); then
+  omarchy-hyprland-workspace-name --prompt "$id" ${name_args[@]+"${name_args[@]}"}
+fi
+echo "$id"

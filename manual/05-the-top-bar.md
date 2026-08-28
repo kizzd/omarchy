@@ -18,6 +18,7 @@ Nearly every widget does something on left, right, and middle click, and several
 | --- | --- | --- | --- |
 | Menu | Omarchy menu | New terminal | — |
 | Workspaces | Focus that workspace | Name it | Middle: forget it (name and keep-alive) |
+| Workspaces `+` (off by default) | Add a workspace | Add it and name it | — |
 | Clock | Calendar popup | Cycle the label format | Middle: timezone picker |
 | Weather | Forecast popup | Full weather as a notification | Middle: refresh |
 | Audio | Audio panel | Mute | Middle: panel · scroll: volume |

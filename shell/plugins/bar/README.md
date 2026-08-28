@@ -76,6 +76,14 @@ omarchy hyprland workspace forget 6      # clears the name and lets it go
 
 Middle-clicking a tile forgets it. Windows on a forgotten workspace stay where they are; only the name and the promise to keep it go. The rules live in `~/.local/state/omarchy/workspace-layouts/`, next to the per-workspace layouts, and are replayed on the next start.
 
+To add workspaces from the bar, turn on the trailing `+` button:
+
+```bash
+omarchy bar set omarchy.workspaces addButton true --json
+```
+
+A left-click adds the next workspace and keeps it, without moving the focus, so several can be set up in a row; a right-click adds it and asks for its name straight away. `omarchy hyprland workspace add [--name]` does the same from the command line.
+
 ## Module catalogue
 
 ### First-party interactive widgets
@@ -83,7 +91,7 @@ Middle-clicking a tile forgets it. Windows on a forgotten workspace stay where t
 | Name | What it does | Interactions |
 |---|---|---|
 | `omarchy.menu` | Omarchy menu launcher | left = menu · right = terminal |
-| `omarchy.workspaces` | Hyprland workspace switcher, with optional names | left = focus workspace · right = name it · middle = forget it |
+| `omarchy.workspaces` | Hyprland workspace switcher, with optional names and add button | left = focus workspace · right = name it · middle = forget it · `+` left = add · `+` right = add and name |
 | `omarchy.clock` | Date/time label + popup with a month grid, ISO week numbers, and month stepping | left = popup · right = cycle label format · middle = timezone selector |
 | `omarchy.media` | MPRIS now-playing — scrolling track + artist, cover-art popup | left = play/pause · middle = next · scroll = prev/next · right = popup |
 | `omarchy.indicators` | Manual state indicators | left = indicator action |

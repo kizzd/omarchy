@@ -71,6 +71,16 @@ BarWidget {
     root.bar.run("omarchy-hyprland-workspace-forget " + id + " --widget " + Util.shellQuote(root.moduleName))
   }
 
+  // An optional trailing "+" that adds the next workspace, kept alive until
+  // its windows arrive. Off by default: the stock bar stays as it is.
+  //   { "id": "omarchy.workspaces", "addButton": true }
+  readonly property bool addButton: root.setting("addButton", false) === true
+
+  function addWorkspace(withName) {
+    if (!root.bar) return
+    root.bar.run("omarchy-hyprland-workspace-add" + (withName ? " --name" : "") + " --widget " + Util.shellQuote(root.moduleName))
+  }
+
   // A config reload replays the saved rules, which can create or drop several
   // workspaces at once. Re-read the list rather than trust that every event
   // of that burst arrived; a missed one leaves a kept workspace without a
@@ -91,7 +101,7 @@ BarWidget {
     id: grid
     anchors.fill: parent
     anchors.rightMargin: root.trailingGap
-    columns: root.vertical ? 1 : root.workspaceIds().length
+    columns: root.vertical ? 1 : root.workspaceIds().length + (root.addButton ? 1 : 0)
     columnSpacing: root.vertical ? 0 : Style.space(1)
     rowSpacing: root.vertical ? Style.space(2) : 0
 
@@ -132,6 +142,21 @@ BarWidget {
           else root.focusWorkspace(modelData)
         }
       }
+    }
+
+    // Faint until hovered, so it reads as an action rather than a workspace.
+    // Right-click adds and asks for the name in one go.
+    WidgetButton {
+      visible: root.addButton
+      bar: root.bar
+      text: "+"
+      tooltipText: "Add a workspace"
+      opacity: tooltipHovered ? 1 : 0.3
+      horizontalMargin: 6
+      verticalPadding: 6
+      fixedWidth: root.vertical ? root.barSize : Style.space(20)
+      fixedHeight: root.barSize
+      onPressed: function(button) { root.addWorkspace(button === Qt.RightButton) }
     }
   }
 }

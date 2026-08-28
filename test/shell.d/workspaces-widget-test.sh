@@ -58,3 +58,18 @@ assert(/else if \(button === Qt\.MiddleButton\) root\.forgetWorkspace\(modelData
 // list is re-read so a kept workspace never waits for a shell restart.
 assert(/String\(event\.name\) === "configreloaded"\) Hyprland\.refreshWorkspaces\(\)/.test(source), 'a config reload re-reads the workspace list')
 JS
+
+run_node_test <<'JS'
+const fs = require('fs')
+const source = fs.readFileSync(root + '/shell/plugins/bar/widgets/Workspaces.qml', 'utf8')
+
+// The add button is opt-in: a bar that never asked for it must look as before.
+assert(/readonly property bool addButton: root\.setting\("addButton", false\) === true/.test(source), 'the add button is off unless the widget settings turn it on')
+assert(/columns: root\.vertical \? 1 : root\.workspaceIds\(\)\.length \+ \(root\.addButton \? 1 : 0\)/.test(source), 'the add button only takes a column when it is on')
+assert(/visible: root\.addButton/.test(source), 'the add button is hidden when off')
+
+// Adding goes through the command, on this widget's own entry, so a clone
+// names the workspace where it keeps its names.
+assert(/"omarchy-hyprland-workspace-add" \+ \(withName \? " --name" : ""\) \+ " --widget " \+ Util\.shellQuote\(root\.moduleName\)/.test(source), 'the add button runs the add command on this widget\'s own entry')
+assert(/onPressed: function\(button\) \{ root\.addWorkspace\(button === Qt\.RightButton\) \}/.test(source), 'right-clicking the add button also asks for a name')
+JS
